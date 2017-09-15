@@ -379,7 +379,7 @@ public class Robot extends IterativeRobot {
 	public void clampOpen(int waitTime){
 		end = !isAutonomous();
 		if(!end){
-			armClamp.set(false);
+			armClamp.set(true);
 			try{
 				Thread.sleep(1000*waitTime);
 			}catch(InterruptedException ex){
@@ -391,7 +391,7 @@ public class Robot extends IterativeRobot {
 	public void clampClose(){
 		end = !isAutonomous();
 		if(!end){
-			armClamp.set(true);
+			armClamp.set(false);
 		}
 	}
 	
