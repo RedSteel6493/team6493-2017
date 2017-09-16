@@ -31,6 +31,7 @@ public class Robot extends IterativeRobot {
 	boolean armDown = false;
 	boolean armOpen = false;
 	boolean release = false;
+	boolean singleContr = false;
 	boolean end = false;
 	boolean leftPath,centerPath,rightPath,gyroTest,encTest,redBoiler,blueBoiler,baseline,armOverride;
 	double xDrive,yDrive,turnDrive, parameters;
@@ -177,20 +178,45 @@ public class Robot extends IterativeRobot {
 				}
 			}
 		}
-		//Arm lift toggle
+		//Arm lift toggle and buttons
 		if(timer.get()>1){
-			if(gamepad.getRawButton(1)){
+			if(singleContr) {
+				if(stick.getRawButton(7)) {
+					timer.reset();
+					timer.start();
+					armDown = true;
+				}
+				if(stick.getRawButton(8)) {
+					timer.reset();
+					timer.start();
+					armDown = false;
+				}
+			}else {
+				if(gamepad.getRawButton(1)){
+					timer.reset();
+					timer.start();
+					if(armDown){
+						armDown = false;
+					}else{
+						armDown = true;
+						mecanumDrive = false;
+					}
+				}
+			}
+		}
+		if(timer.get()>1) {
+			if(gamepad.getRawButton(4)||stick.getRawButton(5)) {
 				timer.reset();
 				timer.start();
-				if(armDown){
-					armDown = false;
-				}else{
-					armDown = true;
-					mecanumDrive = false;
+				if(singleContr) {
+					singleContr = false;
+				}else {
+					singleContr = true;
 				}
 			}
 		}
 		//Ball release toggle
+		/*
 		if(timer.get()>1){
 			if(gamepad.getRawButton(2)){
 				timer.reset();
@@ -202,11 +228,26 @@ public class Robot extends IterativeRobot {
 				}
 			}
 		}
+		*/
 		//Arm clamp
-		if(gamepad.getRawAxis(2)>0.5){
-			armOpen = true;
-		}else{
-			armOpen = false;
+		if(timer.get()>1) {
+			if(singleContr) {
+				if(stick.getRawButton(2)) {
+					if(armOpen) {
+						timer.reset();
+						timer.start();
+						armOpen = false;
+					}else {
+						armOpen = true;
+					}
+				}
+			}else {
+				if(gamepad.getRawAxis(2)>0.5){
+					armOpen = true;
+				}else{
+					armOpen = false;
+				}
+			}
 		}
 		if(armOverride){
 			armLift.set(false);
@@ -215,6 +256,7 @@ public class Robot extends IterativeRobot {
 		armClamp.set(armOpen);
 		ballRelease.set(release);
 		//Rope motors
+		/*
 		if(stick.getRawButton(5)){
 			rope1.set(1);
 		}else{
@@ -225,6 +267,7 @@ public class Robot extends IterativeRobot {
 		}else{
 			rope2.set(0);
 		}
+		*/
 		if(stick.getRawButton(1)){
 			rope1.set(1);
 			rope2.set(-1);
