@@ -83,7 +83,7 @@ public class Robot extends IterativeRobot {
 		if(!end){
 			if(leftPath&&!centerPath&&!rightPath&&!redBoiler&&!blueBoiler&&!gyroTest&&!encTest&&!baseline){
 				System.out.println("Left path selected.");
-				driveForward(110);
+				driveForward(105);
 				turnRight(60);
 				driveForward(32);
 				clampOpen(2);
@@ -98,7 +98,7 @@ public class Robot extends IterativeRobot {
 			}else if(!leftPath&&!centerPath&&rightPath&&!redBoiler&&!blueBoiler&&!gyroTest&&!encTest&&!baseline){
 				System.out.println("Right path selected.");
 				System.out.println("Driving forward");
-				driveForward(110);
+				driveForward(105);
 				System.out.println("Turning");
 				turnLeft(60);
 				System.out.println("Driving forward again");
