@@ -1,1 +1,2 @@
 # team6493
+This code is the intellectual property of its owners and contributors. Usage of the code, or portions of the code, without the permission of the contributors, on a part-by-part basis, or as whole, is not allowed without explicit permission, i.e. if one contributor gives permission for all of their contributions, and the other does not, then any code for which permission is not given cannot be used.
