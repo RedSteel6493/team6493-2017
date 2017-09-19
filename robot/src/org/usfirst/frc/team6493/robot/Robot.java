@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.RobotDrive.MotorType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Spark;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 
 public class Robot extends IterativeRobot {
@@ -53,10 +52,11 @@ public class Robot extends IterativeRobot {
 	boolean armDown = false; // Determines if arm is down or up
 	boolean armOpen = false; // Determines if arm is open or closed
 	boolean release = false;
+	boolean armOverride = false; // Arm is forced down if rope motors are in motion
 	
 	// Autonomous
 	boolean end = false; // Used in multiple places to determine when to end autonomous looping
-	boolean leftPath, centerPath, rightPath, gyroTest, encTest, redBoiler, blueBoiler, baseline, armOverride; // Dashboard input buttons for autonomous
+	boolean leftPath, centerPath, rightPath, gyroTest, encTest, redBoiler, blueBoiler, baseline; // Dashboard input buttons for autonomous
 	final double GYRO_SCALE = 1.075; // The gyro's output is not accurate to real world degrees, so the gyro scale is multiplied to the gyro angle to get it close to real world values
 	final double GYRO_CORRECTION_SCALE = -0.03; // Used when driving forward and backward in autonomous, lessens the effect of the gyro to allow the robot to steer itself forward
 	final double BOT_LENGTH = 36; // Used to calculate distance for autonomous
