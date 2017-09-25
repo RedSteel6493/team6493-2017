@@ -12,8 +12,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 
-public class Robot extends IterativeRobot {
-	// Creating & initializing variables and objects
+public class Robot extends IterativeRobot { // Creating & initializing variables and objects
 	
 	// Drive train & motors
 	CANTalon frontLeft, rearLeft, frontRight, rearRight; // Drive motors
@@ -21,6 +20,8 @@ public class Robot extends IterativeRobot {
 	Spark rope1 = new Spark(0); // Rope motor 1
 	Spark rope2 = new Spark(1); // Rope motor 2
 	double xDrive, yDrive, turnDrive, parameters; // Not currently being used, used for accel/decel
+	boolean creepMode = false; // Slows speed if activated by multiplying joystick output by a constant < 1 (CREEP_MODE_SCALER)
+	final double CREEP_MODE_SCALER = 0.5;
 	
 	// Sensors
 	ADXRS450_Gyro gyro = new ADXRS450_Gyro();
@@ -48,10 +49,9 @@ public class Robot extends IterativeRobot {
 	Solenoid armClamp = new Solenoid(0, 6);
 	Solenoid mecanumShift = new Solenoid(0, 7);
 	boolean mecanumDrive = true; // Determines if the robot is in mecanum or traction drive
-	boolean creepMode = false; // Slows speed if activated
 	boolean armDown = false; // Determines if arm is down or up
 	boolean armOpen = false; // Determines if arm is open or closed
-	boolean release = false;
+	boolean release = false; // Determines if the piston holding in the balls is up or down (when the piston is down, the balls are released) (piston is not currently on the robot)
 	boolean armOverride = false; // Arm is forced down if rope motors are in motion
 	
 	// Autonomous
@@ -75,7 +75,7 @@ public class Robot extends IterativeRobot {
 		rearRight = new CANTalon(51);
 		// Initializing robot drive system using talons
 		robot = new RobotDrive(frontLeft,rearLeft,frontRight,rearRight);
-		robot.setSafetyEnabled(false); // Done to prevent unnecessary errors that were not a real problem
+		robot.setSafetyEnabled(false); // Done to prevent unnecessary errors that were not of real importance
 		
 		// Initializing encoders: The encoders are plugged into the front left and front right talons, thus are initialized under those talons
 		frontLeft.setFeedbackDevice(FeedbackDevice.EncRising);
@@ -221,58 +221,56 @@ public class Robot extends IterativeRobot {
 		 *  This is done to prevent toggling back and forth when the button is held down
 		 */
 		
-		// Single controller toggle
+		// Single controller - Single button toggle
 		if((gamepad.getRawButton(4) || stick.getRawButton(5)) && singleContrToggle) {
 			singleContr = !singleContr;
 			singleContrToggle = false;
 		} else if (!gamepad.getRawButton(4) && !stick.getRawButton(5))
 			singleContrToggle = true;
 		
-		// Drive shift toggle
+		// Drive shift - Single button toggle
 		if(stick.getRawButton(4) && mecanumDriveToggle) {
 			mecanumDrive = !mecanumDrive;
 			mecanumDriveToggle = false;
 		} else if(!stick.getRawButton(4))
 			mecanumDriveToggle = true;
 		
-		// Creep mode toggle
+		// Creep mode - Single button toggle
 		if(stick.getRawButton(3) && creepModeToggle){
 			creepMode = !creepMode;
 			creepModeToggle = false;
 		} else if (!stick.getRawButton(3))
 			creepModeToggle = true;
 		
-		// Arm lift toggle (or individual buttons if singleContr is enabled)
-		if(singleContr) {
-			if(stick.getRawButton(7))
+		if (singleContr) { // Determines if certain functions are mapped to the buttons on the joystick or the optional additional xbox controller
+			// Arm lift (using joystick) - Multiple button toggle
+			if(stick.getRawButton(7));
 				armDown = true;
-			if(stick.getRawButton(8))
+			if(stick.getRawButton(8));
 				armDown = false;
-		} else {
-			if(gamepad.getRawButton(1) && armDownToggle){
-				armDown = !armDown;
-				armDownToggle = false;
-			} else if(!gamepad.getRawButton(1))
-				armDownToggle = true;
-		}
-		
-		// Arm clamp toggle (or held button if singleContr is disabled)
-		if(singleContr) {
+				
+			// Arm clamp (using joystick) - Single button toggle
 			if(stick.getRawButton(2) && armOpenToggle) {
 				armOpen = !armOpen;
 				armOpenToggle = false;
 			} else if(!stick.getRawButton(2))
 				armOpenToggle = true;
-		}else {
-			if(gamepad.getRawAxis(2)>0.5){
-				armOpen = true;
-			}else{
-				armOpen = false;
-			}
+		} else {
+			
+			// Arm lift (using xbox controller) - Single button toggle
+			if(gamepad.getRawButton(1) && armDownToggle){
+				armDown = !armDown;
+				armDownToggle = false;
+			} else if(!gamepad.getRawButton(1))
+				armDownToggle = true;
+			
+			// Arm clamp (using xbox controller) - Held button
+			armOpen = (gamepad.getRawAxis(2) > 0.5); // If the statement is true, armOpen becomes true
+			// Xbox controller triggers are considered axes, which is why it's giving a double value rather than a boolean value
 		}
 		
 		// Rope motors
-		// Arm is forced down if rope motors are in motion
+		// Arm is forced down if rope motors are in motion (determined by armOverride)
 		if(stick.getRawButton(1)){
 			rope1.set(1);
 			rope2.set(-1);
@@ -284,7 +282,7 @@ public class Robot extends IterativeRobot {
 		}
 		
 		
-		// Updating solenoids based on booleans tied to them
+		// Updating solenoids based on the booleans tied to them
 		armLift.set(armDown || armOverride); // Forces arm down if rope motors are in motion
 		armClamp.set(armOpen);
 		ballRelease.set(release);
@@ -293,8 +291,9 @@ public class Robot extends IterativeRobot {
 		if(mecanumDrive && !armDown){ // Forces robot into traction drive if the arm is down
 			/*
 			* For mecanum drive, it requires that the left side be inverted in order to function properly.
-			* However, arcade drive gets switched when the left side is inverted. As a result, every time
-			* we have to change between between mecanum and arcade drive, we must invert the left side.
+			* However, arcade drive gets does not function properly when the left side is inverted.
+			* As a result, every time we have to change between between mecanum and arcade drive,
+			* we must invert the left side.
 			*/
 			robot.setInvertedMotor(MotorType.kFrontLeft,true);
 			robot.setInvertedMotor(MotorType.kRearLeft,true);
@@ -306,11 +305,13 @@ public class Robot extends IterativeRobot {
 		}
 		
 		//Drive train
-			//Acceleration curve to make driving smoother (acceleration is not currently being used)
-			//Inputs are joystick axis value, previous drive, acceleration rate
-			// yDrive = accelDecel(stick.getRawAxis(1),yDrive,0.05);
-			// xDrive = accelDecel(stick.getRawAxis(0),xDrive,0.05);
-			// turnDrive = accelDecel(stick.getRawAxis(2),turnDrive,0.05);
+			// Acceleration curve to make driving smoother (acceleration is not currently being used)
+			/*
+			 *  Inputs are joystick axis value, previous drive, acceleration rate
+			 *  yDrive = accelDecel(stick.getRawAxis(1),yDrive,0.05);
+			 *  xDrive = accelDecel(stick.getRawAxis(0),xDrive,0.05);
+			 *  turnDrive = accelDecel(stick.getRawAxis(2),turnDrive,0.05);
+			 */
 		if(mecanumDrive){
 			//(x axis, twist axis, y axis, gyro angle)
 			if(stick.getRawAxis(1) > 0.1 || stick.getRawAxis(1) < -0.1 || stick.getRawAxis(2) > 0.1 || stick.getRawAxis(2) < -0.1 || stick.getRawAxis(0) > 0.1 || stick.getRawAxis(0) < -0.1) {
@@ -319,9 +320,9 @@ public class Robot extends IterativeRobot {
 				robot.mecanumDrive_Cartesian(0, 0, 0, 0);
 			}
 		}else{
-			if(creepMode){
+			if(creepMode){ // If creep mode is enabled, multiply by a constant < 1 to slow the robot down
 				//(Move axis, rotate axis)
-				robot.arcadeDrive(stick.getRawAxis(1) * 0.5, stick.getRawAxis(2) * 0.5);
+				robot.arcadeDrive(stick.getRawAxis(1) * CREEP_MODE_SCALER, stick.getRawAxis(2) * CREEP_MODE_SCALER);
 			}else{
 				robot.arcadeDrive(stick.getRawAxis(1), stick.getRawAxis(2));
 			}
